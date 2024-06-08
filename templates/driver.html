@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Page</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #282c34;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        #current-time {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+        }
+
+        #countdown {
+            font-size: 48px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="current-time"></div>
+    <div>
+        <input type="number" id="hours" placeholder="Hours" min="0">
+        <input type="number" id="minutes" placeholder="Minutes" min="0" max="59">
+        <input type="number" id="seconds" placeholder="Seconds" min="0" max="59">
+        <button onclick="startCountdown()">Start Countdown</button>
+    </div>
+    <div id="countdown">00:00:00</div>
+    <audio id="beep-sound" src="{{ url_for('static', filename='pradeep.mp3') }}" preload="auto"></audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('update', function (data) {
+            updateCountdown(data.remaining_time);
+        });
+
+        socket.on('beep', function () {
+            playBeepSound();
+        });
+
+        function updateCountdown(remainingTime) {
+            const hours = Math.floor(remainingTime / 3600);
+            const minutes = Math.floor((remainingTime % 3600) / 60);
+            const seconds = Math.floor(remainingTime % 60);
+
+            document.getElementById('countdown').textContent =
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function startCountdown() {
+            const hoursInput = document.getElementById('hours').value || 0;
+            const minutesInput = document.getElementById('minutes').value || 0;
+            const secondsInput = document.getElementById('seconds').value || 0;
+
+            const duration = parseInt(hoursInput) * 3600 + parseInt(minutesInput) * 60 + parseInt(secondsInput);
+            socket.emit('start', { duration });
+        }
+
+        function playBeepSound() {
+            console.log("Playing beep sound");
+            const beepSound = document.getElementById('beep-sound');
+            beepSound.play().then(() => {
+                console.log("Beep sound played successfully");
+            }).catch(error => {
+                console.error("Error playing beep sound:", error);
+            });
+        }
+
+        function updateCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            document.getElementById('current-time').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime(); // Initial call to display time immediately
+    </script>
+</body>
+
+</html>
