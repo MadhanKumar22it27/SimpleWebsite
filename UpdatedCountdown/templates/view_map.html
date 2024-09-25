@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Driver Current Location</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+</head>
+
+<body>
+    <h1>StudentView Device Tracking</h1>
+
+    <div id="map" style="height: 600px;"></div>
+    <p id="distance"></p>
+    <script>
+        window.onload = function () {
+            viewMap();
+        };
+
+        let driverMarker;
+        let map;
+
+        function updateDriverMarker(lat, lon) {
+            if (!map) {
+                map = L.map('map').setView([lat, lon], 15);  // Initialize the map if not already initialized
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+            }
+
+            if (!driverMarker) {
+                driverMarker = L.marker([lat, lon]).addTo(map).bindPopup("Driver's Current Location").openPopup();
+            } else {
+                driverMarker.setLatLng([lat, lon]);  // Update the marker's position
+            }
+        }
+
+        function viewMap() {
+            fetch('/coordinates')
+                .then(response => response.json())
+                .then(data => {
+                    updateCombinedMap(data);
+                });
+        }
+
+        function updateCombinedMap(data) {
+            if (!map) {
+                map = L.map('map').setView([11.0835, 76.9966], 15);  // Initialize map centered on Device 1 if not already initialized
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+            }
+
+            const latLngs = [
+                L.latLng(data['device1'][0], data['device1'][1]),  // Device 1
+                L.latLng(data['device2'][0], data['device2'][1])   // Device 2
+            ];
+
+            if (data['driver']) {
+                latLngs.push(L.latLng(data['driver'][0], data['driver'][1]));  // Driver
+            }
+
+            L.Routing.control({
+                waypoints: latLngs,
+                createMarker: function (i, waypoint, n) {
+                    let markerText = (i === 0) ? 'KGISL' : (i === 1) ? 'Device 2' : 'Driver';
+                    return L.marker(waypoint.latLng).bindPopup(markerText);
+                },
+                lineOptions: {
+                    styles: [{ color: 'blue', weight: 6 }]
+                },
+                addWaypoints: false,  // Disable adding waypoints by clicking the route
+                draggableWaypoints: false,  // Disable dragging waypoints
+                routeWhileDragging: false,  // Disable recalculating the route while dragging markers
+            }).addTo(map);
+
+            map.fitBounds(L.latLngBounds(latLngs));
+        }
+
+    </script>
+</body>
+
+</html>

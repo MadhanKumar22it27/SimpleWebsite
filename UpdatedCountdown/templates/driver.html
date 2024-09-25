@@ -108,8 +108,10 @@
     <button id="stop">Stop</button>
 
     <div class="right-buttons">
-        <button id="studentView">StudentView</button>
-        <button id="startTracking">StartTracking</button>
+        <a href="{{url_for('geo_fencing')}}" id="studentView"><button id="studentView">Student View</button></a>
+
+        <a href="{{url_for('start_tracking')}}"> <button id="startTracking">StartTracking</button></a>
+
     </div>
 
     <audio id="beep-sound" src="static/beep.mp3" preload="auto"></audio>
